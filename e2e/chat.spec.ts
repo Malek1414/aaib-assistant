@@ -68,14 +68,100 @@ test("redacts a card number before processing and says so", async ({ page }) => 
   await expect(page.locator('[data-testid="redaction"]')).toContainText("card number");
 });
 
-test("switches the interface to Arabic and RTL", async ({ page }) => {
+test("switches the interface to Arabic and RTL, and back", async ({ page }) => {
   await page.locator("#lang-toggle").click();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  await expect(page.locator("html")).toHaveAttribute("lang", "ar");
   await expect(page.locator("h1")).toHaveText("مساعد خدمة عملاء البنك");
+  await expect(page.locator(".suggestion").first()).toContainText("جولدن");
+  // The composer sits on the right edge's side in RTL: the hint's start is to the right of the send button.
+  const hint = await page.locator(".pii-hint").boundingBox();
+  const send = await page.locator("#send").boundingBox();
+  expect(hint!.x).toBeGreaterThan(send!.x);
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  await page.locator("#lang-toggle").click();
+  await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
+  await expect(page.locator("h1")).toHaveText("Bank Support Assistant");
 });
+
+const overflowX = (page: import("@playwright/test").Page) =>
+  page.evaluate(() => Math.max(document.documentElement.scrollWidth, window.innerWidth) - document.documentElement.clientWidth);
 
 test("has no horizontal scroll at phone width", async ({ page }) => {
   await ask(page, "What is the minimum balance to open a Golden Saving Account?");
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-  expect(overflow).toBeLessThanOrEqual(0);
+  expect(await overflowX(page)).toBeLessThanOrEqual(0);
+});
+
+test("has no horizontal scroll in Arabic either, including a long answer", async ({ page }) => {
+  await page.locator("#lang-toggle").click();
+  expect(await overflowX(page)).toBeLessThanOrEqual(0);
+  await ask(page, "خلال كم يوم عمل يرد البنك على الشكوى بعد إعادة فحصها؟");
+  expect(await overflowX(page)).toBeLessThanOrEqual(0);
+});
+
+test("composer: Enter sends, Shift+Enter adds a line, the send button reflects the state", async ({ page }) => {
+  const input = page.locator("#input");
+  const send = page.locator("#send");
+  await expect(send).toHaveAttribute("data-state", "idle");
+  await expect(send).toBeDisabled();
+  await input.fill("What is the grace period");
+  await expect(send).toHaveAttribute("data-state", "ready");
+  await input.press("Shift+Enter");
+  await input.pressSequentially("on credit card purchases?");
+  await expect(input).toHaveValue("What is the grace period\non credit card purchases?");
+  await expect(page.locator('[data-testid="msg-user"]')).toHaveCount(0);
+  await input.press("Enter");
+  await expect(page.locator('[data-testid="msg-user"]')).toHaveCount(1);
+  await expect(input).toHaveValue("");
+  const msg = page.locator('[data-testid="msg-assistant"]').last();
+  await expect(msg).toHaveAttribute("data-refused", "false");
+  await expect(msg).toContainText("55 days");
+  await expect(page.locator("#welcome")).toBeHidden();
+  await page.locator("#new-chat").click();
+  await expect(page.locator("#welcome")).toBeVisible();
+  await expect(page.locator('[data-testid="msg-assistant"]')).toHaveCount(0);
+});
+
+test("copies an answer with its sources", async ({ page, context, browserName }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]).catch(() => {});
+  const msg = await ask(page, "What is the grace period on credit card purchases?");
+  const copy = msg.locator('button[data-action="copy"]');
+  await copy.click();
+  await expect(copy).toHaveAttribute("data-copied", "true");
+  if (browserName === "chromium") {
+    const text = await page.evaluate(() => navigator.clipboard.readText());
+    expect(text).toContain("55 days");
+    expect(text).toContain("https://www.aaib.com/en/individual/personal-banking/cards/credit-card");
+  }
+});
+
+test("a citation marker highlights its source card", async ({ page }) => {
+  const msg = await ask(page, "What is the grace period on credit card purchases?");
+  await msg.locator("sup.cite a").first().click();
+  await expect(msg.locator("#m1-src-1")).toHaveClass(/flash/);
+  await expect(msg.locator('[data-testid="sources"]')).toHaveAttribute("open", "");
+});
+
+test("toggles dark mode and remembers it", async ({ page }) => {
+  const html = page.locator("html");
+  const toggle = page.locator("#theme-toggle");
+  const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const before = await bg();
+  const wasDark = (await toggle.getAttribute("aria-pressed")) === "true";
+  await toggle.click();
+  await expect(html).toHaveAttribute("data-theme", wasDark ? "light" : "dark");
+  await expect(toggle).toHaveAttribute("aria-pressed", String(!wasDark));
+  expect(await bg()).not.toBe(before);
+  await page.reload();
+  await expect(html).toHaveAttribute("data-theme", wasDark ? "light" : "dark");
+});
+
+test("settings open as a dialog and close with Escape", async ({ page }) => {
+  await page.locator("#settings-toggle").click();
+  await expect(page.locator("#settings")).toBeVisible();
+  await expect(page.locator('#settings input[name="engine"][value="extractive"]')).toBeChecked();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#settings")).toBeHidden();
+  await expect(page.locator("#settings-toggle")).toHaveAttribute("aria-expanded", "false");
 });

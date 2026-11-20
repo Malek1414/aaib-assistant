@@ -6,7 +6,9 @@ From July to September 2025 I was a Software Engineering intern at the Digital F
 
 The default demo costs nothing to run. It is a static site with no server, no API keys and no paid model. Answers are extractive, which means they quote the source. An LLM is optional and runs inside the visitor's browser. Ollama is kept as a local dev provider, like in the original.
 
-![Answer with citations](docs/screenshots/desktop-en.png)
+![Answer with citations, useful links and source cards](docs/screenshots/desktop-en.png)
+
+More in [Screenshots](#screenshots).
 
 ## What it does
 
@@ -54,9 +56,9 @@ flowchart LR
 |---|---|---|
 | Ingestion | `ingest/` | `config.ts` (scope), `robots.ts`, `discover.ts`, `http.ts` (rate limit, retries, cache, host allowlist, offline mode), `fetch-pages.ts`, `extract.ts`, `links.ts` (link resolution, classification, filters), `searchify.ts` + `searchify/bridge.py` (optional Searchify reader), `chunk.ts`, `run.ts`, `embed.ts` |
 | Core (shared by browser and Node) | `src/core/` | `text.ts` (EN/AR normalisation, light stemmers), `bm25.ts`, `dense.ts`, `retrieve.ts`, `answer/extractive.ts`, `answer/grounding.ts`, `guardrails/*`, `providers/*`, `links.ts` (useful links, support links), `assistant.ts` |
-| UI | `src/ui/`, `index.html` | Vite + TypeScript, no framework, streaming, source chips, useful links, EN/AR toggle, mobile layout |
+| UI | `src/ui/`, `index.html` | Vite + TypeScript, no framework. Design tokens in `styles.css` (light/dark, brand-overridable), welcome state with suggestion cards, streaming with caret and stop, citation pills that highlight their source card, collapsible source cards, useful links as action chips, copy/ask-again, settings popover (bottom sheet on phones), EN/AR with full RTL, keyboard and screen-reader support |
 | Eval | `eval/` | `golden.json` (58 questions), `run-eval.ts`, `table.ts`, `results/` |
-| Tests | `tests/`, `e2e/` | Vitest (79 tests), Playwright (9 scenarios × desktop + mobile) |
+| Tests | `tests/`, `e2e/` | Vitest (79 tests), Playwright (15 scenarios × desktop + mobile) |
 
 ### Data flow (as reviewed for the original)
 
@@ -283,6 +285,21 @@ Per-language and dev-split tables: [`eval/RESULTS.md`](eval/RESULTS.md).
 
 Reproduce: `npm run eval` (extractive, all five configs) and `npm run eval -- --provider local-llm --configs bm25+rerank` (generative), then `npm run eval:table`.
 
+## Screenshots
+
+The interface is a calm single column: a welcome state with suggestion cards and trust cues, answers without heavy boxes, a provenance line ("Quoted from 2 public pages · archived 2025-11-15"), citation pills that highlight and scroll to their source card, useful links as action chips (the hotline is the primary action on a refusal) and a floating composer. Light and dark follow the system and can be switched by hand (remembered in `localStorage`). Type is Instrument Sans (display), Inter (text, tabular figures) and IBM Plex Sans Arabic. The small guilloche rosette, the fine line work printed on banknotes, is the neutral mark.
+
+| | |
+|---|---|
+| ![Welcome](docs/screenshots/desktop-welcome.png) | ![Welcome, dark](docs/screenshots/desktop-welcome-dark.png) |
+| ![Answer with sources and useful links](docs/screenshots/desktop-en.png) | ![Answer, dark](docs/screenshots/desktop-dark.png) |
+| ![Refusal with hotline](docs/screenshots/refusal.png) | ![Arabic, right to left](docs/screenshots/desktop-ar.png) |
+| ![PII redaction notice](docs/screenshots/redaction.png) | ![Settings popover](docs/screenshots/settings.png) |
+
+| | | | |
+|---|---|---|---|
+| ![Mobile welcome](docs/screenshots/mobile-welcome.png) | ![Mobile answer](docs/screenshots/mobile-en.png) | ![Mobile Arabic](docs/screenshots/mobile-ar.png) | ![Mobile dark refusal](docs/screenshots/mobile-dark-refusal.png) |
+
 ## Run it locally
 
 ```bash
@@ -319,7 +336,7 @@ To build the Pages bundle by hand: `BASE_PATH=/aaib-assistant/ npm run build`, t
 - The knowledge comes from archived captures (2024 to 2026, dated on every answer), not from the live site. Rates and fees may be out of date, and every answer says so.
 - The FAQ page only renders its first tab (Q-Pay) in static HTML, so the other FAQ tabs are not in the snapshot.
 - The generative mode uses a 0.5B model, so its prose is weaker than the extractive quotes. Its value is showing that a pluggable LLM can be wrapped in the same citation and number checks.
-- No logo or brand styling of the bank is used. The name, colours and layout are neutral.
+- No logo or brand styling of the bank is used. The name, colours and layout are neutral. An optional local brand layer (`brand-local/`, git-ignored, `npm run dev:brand`) can override the design tokens and fill the header logo slot (`.brand .mark`); `vite.config.ts` loads it as empty unless `VITE_BRAND=aaib`, so it never reaches a public build.
 
 ## License
 
