@@ -37,6 +37,32 @@ test("refuses ungrounded questions and hands off to support", async ({ page }) =
   await expect(msg.locator('[data-testid="source-chip"]')).toHaveCount(0);
 });
 
+test("lists useful links from the cited chunks under the sources", async ({ page }) => {
+  const msg = await ask(page, "Where can I download the retail tariff?");
+  await expect(msg).toHaveAttribute("data-refused", "false");
+  const links = msg.locator('[data-testid="useful-link"]');
+  await expect(msg.locator('[data-testid="useful-links"] h3')).toHaveText("Useful links");
+  await expect(links.first()).toHaveAttribute("data-kind", "pdf");
+  await expect(links.first().locator("a")).toHaveAttribute("href", "https://www.aaib.com/pdfs/retail_tariff.pdf");
+  expect(await links.count()).toBeLessThanOrEqual(5);
+  const hrefs = await links.locator("a").evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
+  expect(hrefs.every((h) => !h.includes("web.archive.org"))).toBe(true);
+});
+
+test("a refusal points to the hotline and the contact page", async ({ page }) => {
+  const msg = await ask(page, "What is the interest rate on the crypto savings account?");
+  await expect(msg).toHaveAttribute("data-refused", "true");
+  await expect(msg.locator('[data-testid="useful-link"][data-kind="phone"] a')).toHaveAttribute("href", "tel:19555");
+  await expect(msg.locator('[data-testid="useful-link"][data-kind="page"] a')).toHaveAttribute("href", /contact-us$/);
+});
+
+test("useful links are labelled in Arabic for Arabic answers", async ({ page }) => {
+  const msg = await ask(page, "خلال كم يوم عمل يرد البنك على الشكوى بعد إعادة فحصها؟");
+  await expect(msg).toHaveAttribute("data-refused", "false");
+  await expect(msg.locator('[data-testid="useful-links"] h3')).toHaveText("روابط مفيدة");
+  await expect(msg.locator('[data-testid="useful-link"] .txt').first()).toHaveAttribute("dir", "auto");
+});
+
 test("redacts a card number before processing and says so", async ({ page }) => {
   await ask(page, "my card 4111 1111 1111 1111 was stolen");
   await expect(page.locator('[data-testid="redaction"]')).toContainText("card number");

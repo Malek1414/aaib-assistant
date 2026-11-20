@@ -27,5 +27,14 @@ try {
 } catch {
   /* generative eval not run */
 }
+// Hand-written notes below the marker survive regeneration.
+const MARKER = "<!-- notes: kept by eval/table.ts -->";
+try {
+  const prev = await readFile("eval/RESULTS.md", "utf8");
+  const i = prev.indexOf(MARKER);
+  if (i >= 0) md += "\n" + prev.slice(i);
+} catch {
+  /* first run */
+}
 await writeFile("eval/RESULTS.md", md);
 console.log(md);

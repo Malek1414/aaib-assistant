@@ -1,0 +1,46 @@
+{
+  "snapshot": "2026-11-20-v2",
+  "indexVersion": "fcc7c59a1571",
+  "robots": {
+    "source": "none",
+    "note": "the live site rejects automated clients with a WAF page (also for robots.txt), and archived robots.txt copies are the same WAF page. Policy: never contact the live site (only web.archive.org is allowed), read only Internet Archive captures, restrict to an explicit allowlist of public product/FAQ/support paths."
+  },
+  "pages": 68,
+  "pagesByLocale": {
+    "en": 35,
+    "ar": 33
+  },
+  "extractor": "legacy",
+  "extraction": {
+    "html": 45,
+    "rsc": 23,
+    "searchify": 0,
+    "searchifyGated": 0,
+    "searchifyFallback": 0
+  },
+  "links": {
+    "pageLinks": 121,
+    "pagesWithLinks": 52,
+    "chunkLinks": 109,
+    "chunksWithLinks": 66,
+    "byKind": {
+      "phone": 45,
+      "page": 30,
+      "pdf": 24,
+      "email": 4,
+      "external": 16,
+      "app_store": 2
+    },
+    "boilerplateHrefsDropped": 19
+  },
+  "chunks": 360,
+  "chunksByLocale": {
+    "en": 184,
+    "ar": 176
+  },
+  "quarantinedBlocks": 0,
+  "requests": 84,
+  "networkRequests": 0,
+  "rejectedCaptures": 0,
+  "durationSec": 2
+}

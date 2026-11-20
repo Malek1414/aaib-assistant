@@ -8,3 +8,7 @@ playwright-report/
 
 # Local-only bank branding (logo/colours). Never commit or deploy.
 brand-local/
+
+# Project-local Python venv for the optional Searchify reader (ingest/searchify.ts)
+ingest/.venv/
+__pycache__/

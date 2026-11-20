@@ -8,7 +8,7 @@
  *   - numeric grounding (every number in an answer appears in a cited source)
  *   - latency p50/p95
  *
- * Usage: npx tsx eval/run-eval.ts [--split dev|test|all] [--configs bm25,bm25+rerank,...] [--provider extractive|ollama|local-llm]
+ * Usage: npx tsx eval/run-eval.ts [--split dev|test|all] [--configs bm25,bm25+rerank,...] [--provider extractive|ollama|local-llm] [--skip-golden-check]
  */
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { Assistant, type AssistantResult } from "../src/core/assistant.ts";
@@ -159,7 +159,8 @@ async function main() {
   const problems = validateGolden(golden.items, index);
   if (problems.length) {
     console.error("Golden set does not match the snapshot:\n  " + problems.join("\n  "));
-    process.exit(2);
+    // --skip-golden-check: score anyway, to measure a snapshot that lost content (extractor comparisons).
+    if (!process.argv.includes("--skip-golden-check")) process.exit(2);
   }
   const items = golden.items.filter((i) => split === "all" || i.split === split);
 

@@ -1,5 +1,17 @@
 import type { Lang } from "./text.ts";
 
+/** What a link leads to. Drives the label/icon in the "Useful links" list. */
+export type LinkKind = "page" | "pdf" | "form" | "phone" | "email" | "app_store" | "external";
+
+/** A link extracted from a source page at ingestion time (never typed by hand). */
+export interface Link {
+  /** Anchor text after the injection and PII filters. */
+  text: string;
+  /** Live URL (https://www.aaib.com/..., an external site, tel: or mailto:), never an archive wrapper. */
+  href: string;
+  kind: LinkKind;
+}
+
 export interface Chunk {
   id: string;
   /** Public page URL the chunk was taken from; every citation points here. */
@@ -12,6 +24,8 @@ export interface Chunk {
   /** Wayback Machine capture used as the source of the snapshot. */
   archiveUrl: string;
   captured: string;
+  /** Links found inside this chunk's section of the page (deduped, boilerplate removed). */
+  links?: Link[];
 }
 
 export interface KnowledgeIndex {
@@ -37,6 +51,8 @@ export interface Citation {
   chunkId: string;
   captured: string;
   archiveUrl: string;
+  /** Links of the cited chunk, used to build the "Useful links" list. */
+  links?: Link[];
 }
 
 export interface Retrieved {

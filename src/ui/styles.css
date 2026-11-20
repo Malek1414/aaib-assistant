@@ -151,6 +151,20 @@ button { font: inherit; cursor: pointer; }
 .chip .section { color: var(--muted); }
 .chip .url { color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: ltr; text-align: start; }
 .chip .arch { grid-column: 2; font-size: 0.75rem; color: var(--muted); }
+.useful-links { margin-top: 10px; }
+.useful-links h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 6px; font-weight: 600; }
+[dir="rtl"] .useful-links h3 { letter-spacing: 0; }
+.useful-links ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.useful-links li { min-width: 0; max-width: 100%; }
+.useful-links a {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 100%; text-decoration: none;
+  padding: 4px 10px 4px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 0.82rem; color: var(--ink);
+}
+[dir="rtl"] .useful-links a { padding: 4px 8px 4px 10px; }
+.useful-links a:hover, .useful-links a:focus-visible { border-color: var(--accent); }
+.useful-links .ico { width: 14px; height: 14px; flex: none; fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-linejoin: round; stroke-linecap: round; }
+.useful-links .kind { color: var(--accent); font-weight: 600; font-size: 0.72rem; flex: none; }
+.useful-links .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .meta { color: var(--muted); margin: 8px 0 0; }
 
 .composer {

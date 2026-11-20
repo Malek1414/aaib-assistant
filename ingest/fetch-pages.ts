@@ -21,6 +21,8 @@ export interface LedgerEntry {
   reason?: string;
   sha256?: string;
   bytes?: number;
+  /** True when the capture was served from the local cache instead of a new archive request. */
+  fromCache?: boolean;
 }
 
 /** A capture is usable only if it is real page HTML, not a WAF or Wayback error page. */
@@ -41,12 +43,12 @@ export async function fetchBestCapture(t: Target, maxTries = 3): Promise<{ page?
       const res = await politeGet(archiveUrl);
       const bad = res.status !== 200 ? `http-${res.status}` : isUsableHtml(res.body);
       if (bad) {
-        ledger.push({ url: t.url, archiveUrl, captureTimestamp: c.timestamp, status: "rejected", reason: bad });
+        ledger.push({ url: t.url, archiveUrl, captureTimestamp: c.timestamp, status: "rejected", reason: bad, fromCache: res.fromCache });
         continue;
       }
       const sha256 = createHash("sha256").update(res.body).digest("hex");
       const bytes = Buffer.byteLength(res.body);
-      ledger.push({ url: t.url, archiveUrl, captureTimestamp: c.timestamp, status: "ok", sha256, bytes });
+      ledger.push({ url: t.url, archiveUrl, captureTimestamp: c.timestamp, status: "ok", sha256, bytes, fromCache: res.fromCache });
       return {
         page: { url: t.url, locale: t.locale, path: t.path, archiveUrl, captureTimestamp: c.timestamp, sha256, bytes, html: res.body },
         ledger,

@@ -2,10 +2,13 @@ import { composeExtractive, selectSources, type SourceRef } from "./answer/extra
 import { checkNumbers, stripUngroundedSentences, type GroundingReport } from "./answer/grounding.ts";
 import { redactPii, type Redaction } from "./guardrails/pii.ts";
 import { classifyScope, hasBankingTerm, type ScopeVerdict } from "./guardrails/scope.ts";
+import { SUPPORT, supportLinks, usefulLinks } from "./links.ts";
 import type { AnswerProvider } from "./providers/types.ts";
 import type { Retriever, RetrieveOptions } from "./retrieve.ts";
 import { detectLang, type Lang } from "./text.ts";
-import type { Citation, Retrieved } from "./types.ts";
+import type { Citation, Link, Retrieved } from "./types.ts";
+
+export { SUPPORT };
 
 export type RefusalReason = "no-grounded-source" | "out-of-scope" | "account-action" | "advice" | "injection" | "empty";
 
@@ -22,12 +25,6 @@ export interface GateConfig {
 
 /** Thresholds chosen on the dev split of eval/golden.json (see README, "Evaluation"). */
 export const DEFAULT_GATE: GateConfig = { minScore: 0.42, minCoverage: 0.6, minCoverageBanking: 0.4, maxUnknownShare: 0.3 };
-
-export const SUPPORT = {
-  phone: "19555",
-  phoneIntl: "+202 19555",
-  contactUrl: { en: "https://www.aaib.com/en/discover-more/customer-rights/contact-us", ar: "https://www.aaib.com/ar/discover-more/customer-rights/contact-us" },
-};
 
 const REFUSALS: Record<Lang, Record<RefusalReason, string>> = {
   en: {
@@ -67,6 +64,8 @@ export interface AssistantResult {
   refused: boolean;
   refusalReason?: RefusalReason;
   citations: Citation[];
+  /** "Useful links": links of the cited chunks (max 5), or the hotline and contact page for a refusal. */
+  usefulLinks: Link[];
   retrieved: Retrieved[];
   redactions: Redaction[];
   grounding: GroundingReport;
@@ -109,6 +108,7 @@ export class Assistant {
       const answer = REFUSALS[lang][reason] + handoff;
       return {
         ...base, answer, refused: true, refusalReason: reason, citations: [], retrieved,
+        usefulLinks: reason === "empty" ? [] : supportLinks(lang),
         grounding: checkNumbers(answer, [handoffText(lang)]),
         timings: { retrieveMs: tRetrieve, generateMs: 0, totalMs: now() - t0 },
       };
@@ -188,7 +188,7 @@ export class Assistant {
     yield {
       type: "final",
       result: {
-        ...base, answer, refused: false, citations, retrieved, removedSentences: removed, usedFallback,
+        ...base, answer, refused: false, citations, usefulLinks: usefulLinks(citations), retrieved, removedSentences: removed, usedFallback,
         grounding: checkNumbers(text, sourceTexts),
         timings: { retrieveMs, generateMs, totalMs: now() - t0 },
       },
@@ -205,5 +205,6 @@ function toCitations(sources: SourceRef[]): Citation[] {
     chunkId: r.chunk.id,
     captured: r.chunk.captured,
     archiveUrl: r.chunk.archiveUrl,
+    links: r.chunk.links ?? [],
   }));
 }

@@ -10,8 +10,8 @@ import type { RetrievalMode } from "../core/retrieve.ts";
 import type { Lang } from "../core/text.ts";
 import type { Citation } from "../core/types.ts";
 import { Engine, type EngineId } from "./engine.ts";
-import { PII_LABELS, STRINGS, SUGGESTIONS } from "./i18n.ts";
-import { escapeHtml, renderAnswer, renderSources } from "./render.ts";
+import { LINK_KIND_LABELS, PII_LABELS, STRINGS, SUGGESTIONS } from "./i18n.ts";
+import { escapeHtml, renderAnswer, renderSources, renderUsefulLinks } from "./render.ts";
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as T;
 const log = $<HTMLElement>("#log");
@@ -112,6 +112,7 @@ function finish(bubble: HTMLElement, body: HTMLElement, r: AssistantResult, id: 
   if (r.usedFallback && !engine.assistant.provider.extractive) notes.push(STRINGS[lang].fallback);
   if (notes.length) body.insertAdjacentHTML("beforeend", notes.map((n) => `<p class="note warn">${escapeHtml(n)}</p>`).join(""));
   bubble.insertAdjacentHTML("beforeend", renderSources(r.citations, id, { sources: STRINGS[lang].sources, archived: STRINGS[lang].archived }));
+  bubble.insertAdjacentHTML("beforeend", renderUsefulLinks(r.usefulLinks, { title: STRINGS[lang].usefulLinks, kinds: LINK_KIND_LABELS[lang] }));
   bubble.insertAdjacentHTML(
     "beforeend",
     `<p class="meta mono">${r.provider} · ${retrievalMode} · ${Math.round(r.timings.totalMs)} ms</p>`,

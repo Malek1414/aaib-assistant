@@ -27,17 +27,14 @@ export interface RobotsDecision {
 
 /**
  * Robots policy. The live site sits behind a WAF that rejects automated
- * clients (it returns a "Request Rejected" HTML page, also for robots.txt).
+ * clients (it returned a "Request Rejected" HTML page, also for robots.txt).
  * We read that as "automated access to the live site is not welcome" and do
- * not try to get around it. Instead the crawler reads public captures from the
+ * not try to get around it: the live site is never contacted at all (http.ts
+ * only allows web.archive.org). The crawler reads public captures from the
  * Internet Archive, at one request every two seconds. If any parseable
- * robots.txt can be found, its rules are still applied to every path.
+ * archived robots.txt can be found, its rules are still applied to every path.
  */
 export async function resolveRobots(): Promise<RobotsDecision> {
-  const live = await politeGet(`${CANONICAL_ORIGIN}/robots.txt`, { cache: false }).catch(() => null);
-  if (live && live.status === 200 && looksLikeRobots(live.body)) {
-    return { source: "live", note: "live robots.txt parsed", rules: parseRobots(live.body, USER_AGENT) };
-  }
   const cdx = await politeGet(
     "https://web.archive.org/cdx/search/cdx?url=aaib.com/robots.txt&fl=timestamp,original&filter=statuscode:200&limit=-20",
   );
@@ -52,8 +49,8 @@ export async function resolveRobots(): Promise<RobotsDecision> {
   return {
     source: "none",
     note:
-      "live robots.txt is blocked by a WAF (HTML 'Request Rejected'); recent archived copies are the same WAF page. " +
-      "Policy: never crawl the live site, read only Internet Archive captures, restrict to an explicit allowlist of public product/FAQ/support paths.",
+      "the live site rejects automated clients with a WAF page (also for robots.txt), and archived robots.txt copies are the same WAF page. " +
+      "Policy: never contact the live site (only web.archive.org is allowed), read only Internet Archive captures, restrict to an explicit allowlist of public product/FAQ/support paths.",
     rules: null,
   };
 }

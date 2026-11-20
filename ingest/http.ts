@@ -6,6 +6,24 @@ import { MAX_RETRIES, REQUEST_INTERVAL_MS, USER_AGENT } from "./config.ts";
 const CACHE_DIR = ".cache/http";
 const lastHit = new Map<string, number>();
 
+/**
+ * The only host the crawler may contact. The bank's live site rejects automated
+ * clients, so it is never fetched (not even robots.txt); everything comes from
+ * public Internet Archive captures.
+ */
+export const ALLOWED_FETCH_HOSTS = new Set(["web.archive.org"]);
+
+/** Offline mode: serve from the on-disk cache only and fail on a miss (`--offline`, or INGEST_OFFLINE=1). */
+let offline = process.env.INGEST_OFFLINE === "1";
+export const setOffline = (v: boolean) => {
+  offline = v;
+};
+
+export function assertFetchAllowed(url: string): void {
+  const host = new URL(url).hostname;
+  if (!ALLOWED_FETCH_HOSTS.has(host)) throw new Error(`refusing to fetch ${host}: only Internet Archive captures are read`);
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Per-host rate limiter: at most one request every REQUEST_INTERVAL_MS. */
@@ -28,6 +46,7 @@ export interface FetchResult {
  * backoff on 429/5xx and an on-disk cache so re-runs never re-hit the network.
  */
 export async function politeGet(url: string, opts: { cache?: boolean } = {}): Promise<FetchResult> {
+  assertFetchAllowed(url);
   const useCache = opts.cache ?? true;
   const key = createHash("sha256").update(url).digest("hex").slice(0, 32);
   const file = join(CACHE_DIR, key + ".json");
@@ -39,6 +58,7 @@ export async function politeGet(url: string, opts: { cache?: boolean } = {}): Pr
       /* cache miss */
     }
   }
+  if (offline) throw new Error(`offline: ${url} is not in the cache`);
   const host = new URL(url).host;
   let attempt = 0;
   for (;;) {

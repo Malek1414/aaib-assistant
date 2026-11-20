@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
-import type { Chunk } from "../src/core/types.ts";
+import type { Chunk, Link } from "../src/core/types.ts";
 import type { Block } from "./extract.ts";
 import type { Lang } from "../src/core/text.ts";
+import { dedupeLinks } from "./links.ts";
+
+/** At most this many links are kept per chunk (in page order). */
+export const MAX_CHUNK_LINKS = 8;
 
 export interface ChunkOptions {
   /** Soft cap on words per chunk. Rows and sentences are never split. */
@@ -26,29 +30,35 @@ export function chunkPage(
   blocks: Block[],
   opts: ChunkOptions = { maxWords: 160, overlapLines: 1 },
 ): Chunk[] {
-  const sections: { path: string[]; lines: string[] }[] = [];
+  // A line is either text (with the links inside it) or links only: a link block,
+  // or a call-to-action line like "Download" whose text is noise but whose PDF is not.
+  type Line = { text: string | null; links: Link[] };
+  const sections: { path: string[]; lines: Line[]; headingLinks: Link[] }[] = [];
   const trail: { level: number; text: string }[] = [];
-  let current: { path: string[]; lines: string[] } | null = null;
+  let current: { path: string[]; lines: Line[]; headingLinks: Link[] } | null = null;
   for (const b of blocks) {
     if (b.kind === "heading") {
       const level = b.level ?? 2;
       while (trail.length && trail[trail.length - 1].level >= level) trail.pop();
       trail.push({ level, text: b.text });
-      current = { path: trail.map((t) => t.text), lines: [] };
+      current = { path: trail.map((t) => t.text), lines: [], headingLinks: b.links ?? [] };
       sections.push(current);
       continue;
     }
     if (!current) {
-      current = { path: [], lines: [] };
+      current = { path: [], lines: [], headingLinks: [] };
       sections.push(current);
     }
-    if (!isNoiseLine(b.text)) current.lines.push(b.text);
+    const text = b.kind === "link" || isNoiseLine(b.text) ? null : b.text;
+    if (text !== null || b.links?.length) current.lines.push({ text, links: b.links ?? [] });
   }
 
   const chunks: Chunk[] = [];
   for (const s of sections) {
-    if (!s.lines.length) continue;
+    if (!s.lines.some((l) => l.text !== null)) continue;
     let buf: string[] = [];
+    let bufLinks: Link[] = [...s.headingLinks];
+    let carry: Link[] = []; // links-only lines seen before the first text of the next chunk
     const flush = () => {
       if (!buf.length) return;
       const text = buf.join("\n");
@@ -62,16 +72,27 @@ export function chunkPage(
         text,
         archiveUrl: page.archiveUrl,
         captured: page.captured,
+        links: dedupeLinks(bufLinks).slice(0, MAX_CHUNK_LINKS),
       });
     };
     for (const line of s.lines) {
-      if (buf.length && words(buf.join(" ")) + words(line) > opts.maxWords) {
+      if (line.text === null) {
+        // Links-only lines belong to the chunk being built (a "Download" under its table).
+        if (buf.length) bufLinks.push(...line.links);
+        else carry.push(...line.links);
+        continue;
+      }
+      if (buf.length && words(buf.join(" ")) + words(line.text) > opts.maxWords) {
         flush();
         buf = buf.slice(-opts.overlapLines);
-        if (words(buf.join(" ")) + words(line) > opts.maxWords) buf = [];
+        bufLinks = [];
+        if (words(buf.join(" ")) + words(line.text) > opts.maxWords) buf = [];
       }
-      buf.push(line);
+      buf.push(line.text);
+      bufLinks.push(...carry, ...line.links);
+      carry = [];
     }
+    if (carry.length) bufLinks.push(...carry);
     flush();
   }
   // Drop near-empty fragments that carry no answerable content.

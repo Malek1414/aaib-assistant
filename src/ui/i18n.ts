@@ -1,4 +1,5 @@
 import type { Lang } from "../core/text.ts";
+import type { LinkKind } from "../core/types.ts";
 
 export const STRINGS: Record<Lang, Record<string, string>> = {
   en: {
@@ -21,6 +22,7 @@ export const STRINGS: Record<Lang, Record<string, string>> = {
     disclaimer:
       "Rebuild (2026) of an assistant I built during my 2025 AAIB internship. Not affiliated with or endorsed by AAIB. Uses only public information.",
     sources: "Sources",
+    usefulLinks: "Useful links",
     archived: "archived copy",
     redacted: "Removed before processing:",
     loading: "Loading the knowledge snapshot…",
@@ -51,6 +53,7 @@ export const STRINGS: Record<Lang, Record<string, string>> = {
     disclaimer:
       "إعادة بناء (2026) لمساعد صممته أثناء تدريبي في AAIB عام 2025. غير تابع للبنك ولا معتمد منه. يستخدم المعلومات العامة فقط.",
     sources: "المصادر",
+    usefulLinks: "روابط مفيدة",
     archived: "نسخة مؤرشفة",
     redacted: "تم الحذف قبل المعالجة:",
     loading: "جارٍ تحميل نسخة المعرفة…",
@@ -76,6 +79,11 @@ export const SUGGESTIONS: Record<Lang, string[]> = {
     "كيف أستخدم خدمة المحادثة المصرفية على واتساب؟",
     "هل يطلب البنك معلومات بطاقتي عبر التليفون؟",
   ],
+};
+
+export const LINK_KIND_LABELS: Record<Lang, Record<LinkKind, string>> = {
+  en: { page: "Page", pdf: "PDF", form: "Form", phone: "Call", email: "Email", app_store: "App", external: "Link" },
+  ar: { page: "صفحة", pdf: "PDF", form: "نموذج", phone: "اتصال", email: "بريد", app_store: "تطبيق", external: "رابط" },
 };
 
 export const PII_LABELS: Record<Lang, Record<string, string>> = {
