@@ -1,0 +1,26 @@
+{
+  "snapshot": "2026-11-20",
+  "indexVersion": "96806169a755",
+  "robots": {
+    "source": "none",
+    "note": "live robots.txt is blocked by a WAF (HTML 'Request Rejected'); recent archived copies are the same WAF page. Policy: never crawl the live site, read only Internet Archive captures, restrict to an explicit allowlist of public product/FAQ/support paths."
+  },
+  "pages": 68,
+  "pagesByLocale": {
+    "en": 35,
+    "ar": 33
+  },
+  "extraction": {
+    "html": 45,
+    "rsc": 23
+  },
+  "chunks": 360,
+  "chunksByLocale": {
+    "en": 184,
+    "ar": 176
+  },
+  "quarantinedBlocks": 0,
+  "requests": 84,
+  "rejectedCaptures": 0,
+  "durationSec": 2
+}

@@ -1,0 +1,32 @@
+{
+  "name": "bank-support-assistant",
+  "version": "2.0.0",
+  "description": "Rebuild (2026) of a bank support assistant: grounded, cited answers from public pages, EN/AR, runs free in the browser",
+  "scripts": {
+    "test": "vitest run",
+    "dev": "vite",
+    "build": "tsc -p . && vite build",
+    "preview": "vite preview --port 4791",
+    "ingest": "tsx ingest/run.ts",
+    "embed": "tsx ingest/embed.ts",
+    "eval": "tsx eval/run-eval.ts",
+    "eval:table": "tsx eval/table.ts",
+    "e2e": "playwright test",
+    "typecheck": "tsc -p ."
+  },
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@playwright/test": "1.49",
+    "@types/node": "^22.20.5",
+    "cheerio": "^1.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "5.6",
+    "vite": "5.4",
+    "vitest": "2.1"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.1.2"
+  },
+  "private": "true"
+}

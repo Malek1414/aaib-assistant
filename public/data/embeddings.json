@@ -1,0 +1,8 @@
+{
+  "model": "Xenova/multilingual-e5-small",
+  "dim": 384,
+  "count": 360,
+  "scale": 0.0012388756190697978,
+  "indexVersion": "96806169a755",
+  "dtype": "int8"
+}
