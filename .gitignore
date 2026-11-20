@@ -5,3 +5,6 @@ test-results/
 playwright-report/
 *.log
 .DS_Store
+
+# Local-only bank branding (logo/colours). Never commit or deploy.
+brand-local/

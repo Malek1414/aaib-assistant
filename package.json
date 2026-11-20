@@ -12,7 +12,8 @@
     "eval": "tsx eval/run-eval.ts",
     "eval:table": "tsx eval/table.ts",
     "e2e": "playwright test",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "dev:brand": "VITE_BRAND=aaib vite --port 5180"
   },
   "license": "MIT",
   "type": "module",

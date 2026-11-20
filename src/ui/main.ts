@@ -1,4 +1,10 @@
 import "./styles.css";
+
+// Local-only bank branding. brand-local/ is git-ignored, so public builds never include it.
+if (import.meta.env.VITE_BRAND === "aaib") {
+  const brand = import.meta.glob("../../brand-local/brand.ts");
+  for (const load of Object.values(brand)) void load();
+}
 import type { AssistantResult } from "../core/assistant.ts";
 import type { RetrievalMode } from "../core/retrieve.ts";
 import type { Lang } from "../core/text.ts";
